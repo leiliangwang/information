@@ -1,53 +1,31 @@
-from flask import Flask, session
-from flask_sqlalchemy import SQLAlchemy
-from redis import StrictRedis
-from flask_wtf import CSRFProtect
-from flask_session import Session
+from flask import Flask, session, current_app
 from flask_script import Manager
+from info import create_app, db
+from flask_migrate import Migrate, MigrateCommand
+import logging
 
 
-class Config(object):
+# 单一职责的原则：manage.py 仅仅作为项目启动文件即可
+# 工厂方法的调用
+app = create_app("development")
 
-    DEBUG = True
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:123456@127.0.0.1:3306/information'
-    # 不跟踪数据库修改
-    SQLALCHEMY_TRACK_MODIFICATIONS =  False
-
-    REDIS_HOST = '127.0.0.1'
-    REDIS_PORT = 6379
-    REDIS_NUM = 1
-    # 加密字符串
-    SECRET_KEY = "dsadsafasfwqwqdsa21321wqewq"
-    # 调整session存储位置
-    SESSION_TYPE = 'redis'
-    SESSION_REDIS = StrictRedis(host=REDIS_HOST, port=REDIS_PORT,db=REDIS_NUM)
-    SESSION_USE_SIGNER = True
-    SESSION_PERMANENT = False
-    PERMANENT_SESSION_LIFETIME = 86400*2
-
-
-app = Flask(__name__)
-
-app.config.from_object(Config)
-
-db = SQLAlchemy(app)
-
-redis_store = StrictRedis(host=Config.REDIS_HOST, port=Config.REDIS_PORT,db=Config.REDIS_NUM)
-
-# 开启csrf后端保护机制
-csrf = CSRFProtect(app)
-
-# 穿件session拓展类对象
-Session(app)
-
+# 7. 创建manager管理类
 manager = Manager(app)
-
-@app.route('/')
-def index():
-    session['name'] = 'curry'
-    return 'hello world!'
+# 初始化迁移对象
+Migrate(app, db)
+# 将迁移命令添加到管理对象中
+manager.add_command("db", MigrateCommand)
 
 if __name__ == '__main__':
-    # app.run(debug=True)
-    #python manage.py runserver -h   -p    -d
+
+    # python manage.py runserver -h -p -d
+    # logging.debug("debug的日志信息")
+    # logging.info("info的日志信息")
+    # logging.warning("warning的日志信息")
+    # logging.error("error的日志信息")
+    # logging.critical("critical的日志信息")
+    #
+    # # 在 Flask框架 中，其自己对 Python 的 logging 进行了封装，在 Flask 应用程序中，可以以如下方式进行输出 log:
+    # current_app.logger.info("使用flask封住好的方法 info的日志信息")
+
     manager.run()
