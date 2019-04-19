@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask
 from redis import StrictRedis
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_session import Session
 from config import config_dict
 import logging
@@ -13,6 +13,8 @@ from logging.handlers import RotatingFileHandler
 
 # 将数据库对象暴露给外界调用
 # 当app没有值的时候，我们创建一个空的数据库db对象
+from info.utils.common import do_index_class
+
 db = SQLAlchemy()
 # 将redis数据库对象暴露给外界调用
 # # type: StrictRedis作用： 事先声明redis_store以后要保存什么类型的数据
@@ -58,18 +60,40 @@ def create_app(config_name): # development
 
     # 4. 创建redis数据库对象 延迟加载
     global redis_store
+    # decode_responses=True 从redis中获取的值是str类
     redis_store = StrictRedis(host=configClass.REDIS_HOST, port=configClass.REDIS_PORT,
-                              db=configClass.REDIS_NUM)
+                              db=configClass.REDIS_NUM,decode_responses=True)
 
     # 5. 开启csrf后端保护验证机制
     # 提取cookie中的csrf_token和ajax请求头里面csrf_token进行比较验证操作
     csrf = CSRFProtect(app)
+
+    # 在每一次请求之后 将csrf_token值设置到cookie中
+    @app.after_request
+    def set_csrf_token(response):
+        #1. 生成csrf_token随机值
+        csrf_token = generate_csrf()
+        #2. 借助响应对象设置csrf_token到cookie中
+        response.set_cookie("csrf_token", csrf_token)
+        #3. 返回响应对象
+        return response
+
     # 6.创建session拓展类的对象(将session的存储调整到redis中)
     Session(app)
 
+    # 注册自定义过滤器
+    app.add_template_filter(do_index_class, "do_index_class")
+
     # 导入蓝图（延迟导入：解决循环导入文件）
-    from info.modules.index import index_bp
     # 3.注册蓝图
+    # 首页蓝图
+    from info.modules.index import index_bp
     app.register_blueprint(index_bp)
+
+    # 登录注册模块
+    from info.modules.passport import passport_bp
+    app.register_blueprint(passport_bp)
+
+
 
     return app

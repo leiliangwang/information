@@ -14,11 +14,14 @@ class Config(object):
     SQLALCHEMY_DATABASE_URI = "mysql://root:123456@127.0.0.1:3306/information"
     # 不跟踪数据库修改
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # 在app对象获取db.session对象结束的时候自动提交数据库的修改操作
+    # 就等同于db.session.commit()
+    SQLALCHEMY_COMMIT_ON_TEARDOWN = True
 
     # redis数据库配置信息
     REDIS_HOST = "127.0.0.1"
     REDIS_PORT = 6379
-    REDIS_NUM = 1
+    REDIS_NUM = 6
 
     # 设置加密字符串
     SECRET_KEY = "/W73UULUS4UFO5omviuVZz6+Bcjs5+2nRdvmyYNq1wEryZsMeluALSDGxGnuYoKX"
@@ -51,7 +54,7 @@ class ProductionConfig(Config):
     LOG_LEVEL = logging.WARNING
     # 修改数据库的链接对象
     # 数据库链接配置
-    # SQLALCHEMY_DATABASE_URI = "mysql://root:123456@服务器ip地址:3306/information"
+    # SQLALCHEMY_DATABASE_URI = "mysql://root:cq@服务器ip地址:3306/information16"
 
 
 # 使用方式： config_dict["development"]

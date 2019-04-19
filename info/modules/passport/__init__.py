@@ -2,7 +2,7 @@
 from flask import Blueprint
 
 #1. 创建蓝图对象
-index_bp = Blueprint("index", __name__)
+passport_bp = Blueprint("passport", __name__,url_prefix='/passport')
 
 # 切记：让index模块知道有views.py这个文件
 from .views import *
